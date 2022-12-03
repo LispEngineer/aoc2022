@@ -15,6 +15,9 @@
 (def d1-elves
   "Turns the day1-input into sums for each elf."
   (letfn [(f [acc val]
+            "If val is non-blank, treat it as a string'd long and add it to the last
+             item in the acc vector. If it is blank, we're done with the previous value
+             so we should start a new one (at 0)."
             (if (clojure.string/blank? val)
               ;; Done with the current elf, add a new elf
               (conj acc 0)
@@ -30,8 +33,8 @@
   "D1Q2 - total carried by top three elves"
   (reduce + (take-last 3 (sort d1-elves))))
 
+;; --------------------------------------------------------------------------
+;; Day 2
 
-(defn foo
-  "I don't do a whole lot."
-  [x]
-  (println x "Hello, World!"))
+(def d2-input-raw
+  (clojure.string/split-lines (slurp "resources/day2-input.txt")))
