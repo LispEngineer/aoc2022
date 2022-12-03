@@ -180,23 +180,23 @@
   "Finds the one and only one duplicate in two seqs.
    (nil if no duplicates; one random duplicate if multiple dups.)"
   [s1 s2]
-  (let [set1 (into #{} s1)
-        set2 (into #{} s2)]
+  (let [set1 (set s1)
+        set2 (set s2)]
     (first (clojure.set/intersection set1 set2))))
 
 (defn item-priority
   "Lowercase item types a through z have priorities 1 through 26.
    Uppercase item types A through Z have priorities 27 through 52."
-  [^char item]
-  (if (Character/isLowerCase item)
-    (inc (- (Character/getNumericValue item) (Character/getNumericValue \a)))
-    (+ 27 (- (Character/getNumericValue item) (Character/getNumericValue \A)))))
+  [item]
+  (if (Character/isLowerCase ^char item)
+    (inc (- (Character/getNumericValue ^char item) (Character/getNumericValue \a)))
+    (+ 27 (- (Character/getNumericValue ^char item) (Character/getNumericValue \A)))))
 
 (def d3-q1
   "Answer to day 3 question 1"
   (reduce +
     (map item-priority
-      (map #(apply find-dupe %) d3-input))))
+      (map (partial apply find-dupe) d3-input))))
 ;; 7742
 
 ;; Day 3 question 2 --------
