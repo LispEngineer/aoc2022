@@ -6,6 +6,7 @@
 ;; IntelliJ hotkeys on Windows with Cursive:
 ;; Alt-Shift-P - Send form to REPL
 ;; Control-\ - Jump to REPL input
+;; Alt-Shift-M - "Sync files in REPL"
 
 ;; Day 1 - https://adventofcode.com/2022/day/1
 
@@ -153,3 +154,49 @@
 
 
 ;; DAY 3 ----------------------------------------------------------------------
+;; https://adventofcode.com/2022/day/3
+
+(def d3-input-raw
+  "Day 3 input split into raw lines"
+  (clojure.string/split-lines (slurp "resources/day3-input.txt")))
+
+(def d3-input
+  "The day 3 input split into a seq of rucksacks,
+   each with two compartments, each of which is
+   a vector of its contents (in order). Each item is a character.
+   Example: [ [[a b c] [c D E]]
+              [[e F G H] [H i j K]] ]
+   (It may not be vectors.)
+   The order doesn't seem to matter for now.
+   The rucksack has two equal compartments."
+  (letfn [(make-sack [s]
+            (let [chars (mapv char s)
+                  cnt (count chars)
+                  hlf (/ cnt 2)]
+              [(take hlf chars) (drop hlf chars)]))]
+    (map make-sack d3-input-raw)))
+
+(defn find-dupe
+  "Finds the one and only one duplicate in two seqs.
+   (nil if no duplicates; one random duplicate if multiple dups.)"
+  [s1 s2]
+  (let [set1 (into #{} s1)
+        set2 (into #{} s2)]
+    (first (clojure.set/intersection set1 set2))))
+
+(defn item-priority
+  "Lowercase item types a through z have priorities 1 through 26.
+   Uppercase item types A through Z have priorities 27 through 52."
+  [item]
+  (if (Character/isLowerCase item)
+    (inc (- (Character/getNumericValue item) (Character/getNumericValue \a)))
+    (+ 27 (- (Character/getNumericValue item) (Character/getNumericValue \A)))))
+
+(def d3-q1
+  "Answer to day 3 question 1"
+  (reduce +
+    (map item-priority
+      (map #(apply find-dupe %) d3-input))))
+;; 7742
+
+;; Day 3 question 2 --------
