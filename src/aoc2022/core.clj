@@ -187,7 +187,7 @@
 (defn item-priority
   "Lowercase item types a through z have priorities 1 through 26.
    Uppercase item types A through Z have priorities 27 through 52."
-  [item]
+  [^char item]
   (if (Character/isLowerCase item)
     (inc (- (Character/getNumericValue item) (Character/getNumericValue \a)))
     (+ 27 (- (Character/getNumericValue item) (Character/getNumericValue \A)))))
@@ -200,3 +200,53 @@
 ;; 7742
 
 ;; Day 3 question 2 --------
+
+;; Group input into 3
+;; combine each of the 3 rucksack into a single set
+;; see what is the same in all 3
+;; i.e.: (apply clojure.set/intersection (map (comp set flatten) (take 3 d3-input)))
+;; for a single example
+
+(def d3-group
+  "Groups of elves with rucksacks;
+   three elves at a time.
+   This gives us a structure like this:
+   (
+    ( ;; Group 1
+     [ ;; Elf Rucksack 1
+       (a b c) ;; compartment 1
+       (d e c) ;; compartment 2
+     ]
+     [ ... ] ;; elf rucksack 2
+     [ ... ] ;; elf rucksack 3
+   ) ;; End of Group 1
+   "
+  (partition 3 d3-input))
+
+(def d3-group-sets
+  "Groups of elves with rucksacks all combined into a set of what's in them;
+   three elves at a time.
+   This gives us a structure like this:
+   (
+    ( ;; Group 1
+     #{ ;; Elf Rucksack 1
+      }
+      ...
+    ) ;; end of group 1
+   ) ;; all elves/rucksacks
+   "
+  (partition 3 (map (comp set flatten) d3-input)))
+
+(def d3-badges
+  "The badge is the unique item in each group of 3 elves's rucksacks."
+  (map #(first (apply clojure.set/intersection %)) d3-group-sets))
+
+;; Note: Up to here there has been no error checking of these cases:
+;; 1. Any last group of less than 3 elves: (some #(not= 3 %) (map count d3-groups)) is nil, so good
+;; 2. Any group of 3 elves with no badge: (some nil? d3-badges) is nil, so good
+;; 3. That there are several groups
+
+(def d3-q2
+  "And add the priorities of the badges"
+  (reduce + 0 (map item-priority d3-badges)))
+;; 2276
