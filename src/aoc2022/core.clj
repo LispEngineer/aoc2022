@@ -94,3 +94,14 @@
     :draw 3
     :lose 0
     (throw (ex-info "Invalid rps outcome" {:outcome outcome}))))
+
+(defn round-score
+  "Gets the score for one round. Input is: [opponent us]."
+  [[_ us :as round]]
+  (+ (shape-score us) (rps-score (rps-outcome round))))
+
+(def d2-q1
+  "The total score from all rounds."
+  (reduce + 0 (map round-score d2-input)))
+;; 12276
+
