@@ -42,7 +42,7 @@
   (clojure.string/split-lines (slurp "resources/day2-input.txt")))
 
 ;; Let's parse this from "1 2" strings to [:rock :paper] vectors
-(defn parse-d2-input
+(defn parse-d2-input-q1
   [s]
   (letfn [(char-to-rps [c]
             (case c
@@ -54,9 +54,9 @@
           us (last s)]
       [(char-to-rps opponent) (char-to-rps us)])))
 
-(def d2-input
+(def d2-input-q1
   "Input split into RPS vectors of [opponent us]."
-  (map parse-d2-input d2-input-raw))
+  (map parse-d2-input-q1 d2-input-raw))
 
 ;; The winner of the whole tournament is the player with the highest score.
 ;; Your total score is the sum of your scores for each round.
@@ -102,6 +102,54 @@
 
 (def d2-q1
   "The total score from all rounds."
-  (reduce + 0 (map round-score d2-input)))
+  (reduce + 0 (map round-score d2-input-q1)))
 ;; 12276
 
+;; QUESTION 2 ----------------------
+;; Anyway, the second column says how the round needs to end:
+;; X means you need to lose,
+;; Y means you need to end the round in a draw, and
+;; Z means you need to win.
+
+;; Let's parse this from "1 2" strings to [:rock :paper] vectors
+(defn parse-d2-input-q2
+  "Returns [rps-shape desired-outcome]"
+  [s]
+  (letfn [(char-to-rps [c]
+            (case c
+              \A :rock
+              \B :paper
+              \C :scissors
+              \X :lose
+              \Y :draw
+              \Z :win
+              (throw (ex-info "Invalid rps-q2 character" {:input c}))))]
+    (let [opponent (first s)
+          desired-outcome (last s)]
+      [(char-to-rps opponent) (char-to-rps desired-outcome)])))
+
+(def d2-input-q2
+  "Input split into RPS vectors of [opponent desired-outcome]."
+  (map parse-d2-input-q2 d2-input-raw))
+
+(defn shape-for-outcome
+  "Returns the [opponent us] to make the
+  [opponent desired-outcome] true."
+  [[opponent desired-outcome]]
+  [opponent
+   (case desired-outcome
+     :draw opponent
+     :win  (case opponent :rock :paper, :paper :scissors, :scissors :rock, :invalid)
+     :lose (case opponent :rock :scissors, :paper :rock, :scissors :paper, :invalid))])
+
+(def d2-input-q2-rps
+  "Turns the input into a series of turns for RPS game."
+  (map shape-for-outcome d2-input-q2))
+
+(def d2-q2
+  "The total score from all rounds for Q2."
+  (reduce + 0 (map round-score d2-input-q2-rps)))
+;; 9975
+
+
+;; DAY 3 ----------------------------------------------------------------------
