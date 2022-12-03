@@ -5,6 +5,7 @@
 
 ;; IntelliJ hotkeys on Windows with Cursive:
 ;; Alt-Shift-P - Send form to REPL
+;; Control-\ - Jump to REPL input
 
 ;; Day 1 - https://adventofcode.com/2022/day/1
 
@@ -37,4 +38,59 @@
 ;; Day 2
 
 (def d2-input-raw
+  "Raw text file input split into lines"
   (clojure.string/split-lines (slurp "resources/day2-input.txt")))
+
+;; Let's parse this from "1 2" strings to [:rock :paper] vectors
+(defn parse-d2-input
+  [s]
+  (letfn [(char-to-rps [c]
+            (case c
+              (\A \X) :rock
+              (\B \Y) :paper
+              (\C \Z) :scissors
+              (throw (ex-info "Invalid rps character" {:input c}))))]
+    (let [opponent (first s)
+          us (last s)]
+      [(char-to-rps opponent) (char-to-rps us)])))
+
+(def d2-input
+  "Input split into RPS vectors of [opponent us]."
+  (map parse-d2-input d2-input-raw))
+
+;; The winner of the whole tournament is the player with the highest score.
+;; Your total score is the sum of your scores for each round.
+;; The score for a single round is the score for the shape you selected
+;; (1 for Rock, 2 for Paper, and 3 for Scissors)
+;; plus the score for the outcome of the round
+;; (0 if you lost, 3 if the round was a draw, and 6 if you won).
+
+(defn shape-score
+  "Gets the score for a given shape.
+   Note, we could do this with a map lookup too, but I imagine this is faster."
+  [sh]
+  (case sh
+    :rock 1
+    :paper 2
+    :scissors 3
+    (throw (ex-info "Unknown rps shape" {:input sh}))))
+
+(defn rps-outcome
+  "What the outcome is for an RPS event. No error checking.
+   Input is [opponent us]."
+  [[opponent us]]
+  (cond
+    (= opponent us) :draw
+    (= opponent :rock) (if (= us :paper) :win :lose)
+    (= opponent :paper) (if (= us :scissors) :win :lose)
+    :else ;; :scissors
+    (if (= us :rock) :win :lose)))
+
+(defn rps-score
+  "Gets the score for a given outcome for us"
+  [outcome]
+  (case outcome
+    :win 6
+    :draw 3
+    :lose 0
+    (throw (ex-info "Invalid rps outcome" {:outcome outcome}))))
