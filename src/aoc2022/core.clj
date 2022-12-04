@@ -250,3 +250,82 @@
   "And add the priorities of the badges"
   (reduce + 0 (map item-priority d3-badges)))
 ;; 2276
+
+
+;; Day 4 -----------------------------------------------------------------------
+
+;; This is sad. I built a whole interval arithmetic library in Java decades ago
+;; for Puresend. It is probably still in the Puresend code base.
+
+;; We will represent a range as [low high] inclusive.
+;; Input is a bunch of lines L-H,L-H.
+;; We want to know how many of those lines have one range entirely contained in the other.
+;; We will assume L <= H but won't check.
+
+(def d4-input-raw
+  "Day 4 input split into raw lines"
+  (clojure.string/split-lines (slurp "resources/day4-input.txt")))
+
+(defn split-last
+  "Like clojure.string/split but takes the input string to
+   split as the last arg."
+  [pattern limit string]
+  (clojure.string/split string pattern limit))
+
+(def d4-input
+  "Day 4 input parsed into
+   [ [[L H] [L H]]
+     [[L H] [L H]] ... ]
+   NO ERROR CHECKING"
+  (let [;; Parse into lists of pairs of strings L-H
+        half-parsed (map (partial split-last #"," 2) d4-input-raw)
+        ;; Parse into lists of pairs of [L H]
+        mostly-parsed (mapv (partial mapv (partial split-last #"-" 2)) hp)]
+    ;; Now we have to parse every value that is a string. We can touch
+    ;; everything with clojure.walk/postwalk
+    ;; (See: https://clojuredocs.org/clojure.walk/postwalk )
+    (clojure.walk/postwalk
+      #(if (string? %) (Long/parseLong %) %)
+      mostly-parsed)))
+
+(defn r-contained?
+  "Determines if r1 is entirely contained in r2.
+   r1 and r2 are [L H] pairs.
+   NO ERROR CHECKING"
+  [[l1 h1] [l2 h2]]
+  (and (>= l1 l2)
+       (<= h1 h2)))
+
+(r-contained? [1 2] [3 4])
+(r-contained? [1 3] [3 4])
+(r-contained? [3 3] [3 4])
+(r-contained? [3 4] [3 4])
+(r-contained? [3 5] [3 4])
+(r-contained? [1 5] [3 4])
+(r-contained? [4 5] [3 5])
+(r-contained? [4 4] [3 5])
+
+(defn either-contained?
+  "Checks if either range is fully contained in the other.
+   NO ERROR CHECKING."
+  [r1 r2]
+  (or (r-contained? r1 r2) (r-contained? r2 r1)))
+
+(either-contained? [4 4] [3 5])
+(either-contained? [3 5] [4 4])
+(either-contained? [3 5] [2 4])
+(either-contained? [3 5] [5 4])
+(either-contained? [3 5] [3 5])
+(either-contained? [3 5] [3 6])
+(either-contained? [3 7] [3 6])
+(either-contained? [4 7] [3 6])
+
+(def d4-q1
+  "How many pairs have one fully contained in the other?"
+  ;; fci = fully contained input, a (t f t f t f) seq of true/false
+  (let [fci (map (partial apply either-contained?) d4-input)]
+    ;; Now let's count the trues
+    (count (filter identity fci))))
+;; 657 (of 1000) - super inefficient LOL
+
+;; D4 Part 2 -------------
