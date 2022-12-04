@@ -329,3 +329,56 @@
 ;; 657 (of 1000) - super inefficient LOL
 
 ;; D4 Part 2 -------------
+
+(defn r-overlap?
+  "Determines if two [L H] ranges have any overlap.
+   Both ranges are inclusive."
+  ;; A silly but easy way to do this would be to make integer sets of
+  ;; both ranges and then do a set intersection. Since it seems all the
+  ;; numbers in this AoC are 1-99 that should work fine if slowly. :)
+  ;; ---
+  ;; Assuming l1 <= l2 - these are the possible situations
+  ;; L2 = L1
+  ;; L1 ---------
+  ;; L2 ---                     Contained within
+  ;; L2 ---------               Complete overlap
+  ;; L2 -----------------       Extends beyond
+  ;; L2 > L1 && L2 <= H1
+  ;; L1 ---------
+  ;; L2   ----                  Contained within
+  ;; L2   -------               Overlap to end
+  ;; L2   ---------------       Extends beyond
+  ;; L2 > H1
+  ;; L1 ---------
+  ;; L2          -----          Starts beyond
+  ;; L2             -------     Starts way beyond
+  [[l1 h1 :as r1] [l2 h2 :as r2]]
+  ;; Ensure that we only check the case where l1 <= l2
+  (if (< l2 l1)
+    (recur r2 r1)
+    ;; Now check cases
+    ;; ASSERT l1 <= l2
+    ;; There is overlap if:
+    ;; The higher low is lower than the lower low's high
+    (<= l2 h1)))
+
+(r-overlap? [1 2] [3 4])
+(r-overlap? [3 4] [1 2])
+(r-overlap? [1 10] [11 20])
+(r-overlap? [1 11] [11 20])
+(r-overlap? [1 30] [11 20])
+(r-overlap? [11 20] [1 10])
+(r-overlap? [11 20] [1 11])
+(r-overlap? [11 20] [1 30])
+(r-overlap? [2 2] [3 3])
+(r-overlap? [3 3] [2 3])
+(r-overlap? [3 3] [3 4])
+(r-overlap? [4 5] [3 4])
+
+(def d4-q2
+  "How many pairs have overlaps?"
+  ;; fci = fully contained input, a (t f t f t f) seq of true/false
+  (let [fci (map (partial apply r-overlap?) d4-input)]
+    ;; Now let's count the trues
+    (count (filter identity fci))))
+;; 938
