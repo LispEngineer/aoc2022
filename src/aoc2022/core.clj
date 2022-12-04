@@ -280,7 +280,7 @@
   (let [;; Parse into lists of pairs of strings L-H
         half-parsed (map (partial split-last #"," 2) d4-input-raw)
         ;; Parse into lists of pairs of [L H]
-        mostly-parsed (mapv (partial mapv (partial split-last #"-" 2)) hp)]
+        mostly-parsed (mapv (partial mapv (partial split-last #"-" 2)) half-parsed)]
     ;; Now we have to parse every value that is a string. We can touch
     ;; everything with clojure.walk/postwalk
     ;; (See: https://clojuredocs.org/clojure.walk/postwalk )
