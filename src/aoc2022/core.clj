@@ -7,6 +7,7 @@
 ;; Alt-Shift-P - Send form to REPL
 ;; Control-\ - Jump to REPL input
 ;; Alt-Shift-M - "Sync files in REPL"
+;; Alt-Shift-L - Load file to repl
 
 ;; Day 1 - https://adventofcode.com/2022/day/1
 
@@ -350,8 +351,8 @@
   ;; L2   ---------------       Extends beyond
   ;; L2 > H1
   ;; L1 ---------
-  ;; L2          -----          Starts beyond
-  ;; L2             -------     Starts way beyond
+  ;; L2          -----          Starts adjacent (but still beyond)
+  ;; L2             -------     Starts (way) beyond
   [[l1 h1 :as r1] [l2 h2 :as r2]]
   ;; Ensure that we only check the case where l1 <= l2
   (if (< l2 l1)
@@ -382,3 +383,25 @@
     ;; Now let's count the trues
     (count (filter identity fci))))
 ;; 938
+
+;; Day 5 ----------------------------------------------------------------
+
+(def d5-input-raw
+  "Day 5 input split into raw lines"
+  (clojure.string/split-lines (slurp "resources/day5-inputtxt")))
+
+;; We have to split the input into two pieces:
+;; 1. Starting crate configuration lines
+;; [BLANK LINE]
+;; 2. Movement commands
+
+;; Shame we don't have a "split-at" that can work on non-strings
+;; given a predicate. We can use partition-by to get close
+(def d5-input-starting
+  "Just the starting crate configuration, including the final crate number line"
+  (take-while #(not (empty? %)) d5-input-raw))
+(def d5-input-moves
+  "Just the moves part of the crate configuration"
+  (drop (inc (count d5-input-starting)) d5-input-raw))
+
+
