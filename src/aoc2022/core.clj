@@ -1,7 +1,8 @@
 (ns aoc2022.core
   "Douglas P. Fields, Jr.'s Advent of Code 2022 solutions in Clojure.
    Copyright 2022 Douglas P. Fields, Jr. All Rights Reserved.
-   symbolics@lisp.engineer")
+   symbolics@lisp.engineer"
+  (:require [clojure.set]))
 
 ;; IntelliJ hotkeys on Windows with Cursive:
 ;; Alt-Shift-P - Send form to REPL
@@ -384,11 +385,11 @@
     (count (filter identity fci))))
 ;; 938
 
-;; Day 5 ----------------------------------------------------------------
+;; Day 5 -------------------------------------------------------------------------
 
 (def d5-input-raw
   "Day 5 input split into raw lines"
-  (clojure.string/split-lines (slurp "resources/day5-inputtxt")))
+  (clojure.string/split-lines (slurp "resources/day5-test1.txt")))
 
 ;; We have to split the input into two pieces:
 ;; 1. Starting crate configuration lines
@@ -396,12 +397,95 @@
 ;; 2. Movement commands
 
 ;; Shame we don't have a "split-at" that can work on non-strings
-;; given a predicate. We can use partition-by to get close
+;; given a predicate. We can use partition-by to get close, but it
+;; keeps the splitting entry.
 (def d5-input-starting
   "Just the starting crate configuration, including the final crate number line"
-  (take-while #(not (empty? %)) d5-input-raw))
+  (first (partition-by empty? d5-input-raw)))
 (def d5-input-moves
   "Just the moves part of the crate configuration"
-  (drop (inc (count d5-input-starting)) d5-input-raw))
+  (last (partition-by empty? d5-input-raw)))
 
+;; We have to parse the crates
+;; CCC_CCC_CCC_CCC_...CCC
+;; We should read the lines from the bottom to top, so we can push things in
+;; bottom to top.
+(def d5-input-crates
+  "The crates for each stack from the raw input.
+   Output:
+   ((S1 S2 S3 ... S9)
+    (S1 S2 S3 ... S9)
+    ...)
+   No crate is a space. (\\space)
+   The crates are single characters
+   The last row is the crate order (we can ignore it)."
+  (map (partial map (comp first second)) ;; Get the first character of the captured group
+       (map (partial re-seq #".(.). ?") d5-input-starting)))
 
+(defn parseLong
+  [s]
+  (Long/parseLong s))
+
+(defn nth'
+  "Like diadic nth but with args reversed"
+  [index col]
+  (nth col index))
+
+;; Clojure stack functions:
+;; push = conj: (conj [1 2 3] 4) => [1 2 3 4]
+;; pop = pop  : (pop [1 2 3])    => [1 2]
+;; peek       : (peek [1 2 3])   => 3
+(def d5-starting-stacks
+  "create a stack for each crate, and return the stacks in a vector.
+   The bottom of each stack is the FIRST element in the stack.
+   Each stack is a vector.
+   So this returns a vector of vectors.
+   The outer vector contains the stacks (stack 1 first),
+   the inner vectors are stacks (bottom item first).
+   [ [bottom middle top]
+     [bottom middle1 middle2 top]
+     [bottom top]
+     ... ]
+   "
+  ;; Get the inputs, from bottom to top
+  (let [in         (drop 1 (reverse d5-input-crates))
+        _ (println (count (first in)))
+        raw-crates (map #(map (partial nth' %) in) (range (count (first in))))]
+    (mapv (partial filterv (partial not= \space)) raw-crates)))
+
+;; So, now we have our starting stacks. Let's create our commands.
+;; Turn every "move N from A to B" to [N A B].
+;; Then turn it into N copies of [A B].
+
+(def d5-moves
+  "Make the list of moves in the form [from to] or (from to)
+   from the raw input."
+  (let [parsed-moves (map #(map parseLong (re-seq #"\d+" %)) d5-input-moves)]
+    ;; Turn the parsed moves into N repeats
+    (mapcat #(repeat (first %) (drop 1 %)) parsed-moves)))
+
+(defn make-move
+  "Makes a single move on the given stacks,
+   returning the new stacks. Move consists of
+   (from to). These from and to are 1-based indexes."
+  [stacks [fr' to']]
+  ;; First figure out what we're taking (from fr).
+  ;; Then pop from that stack, and push it to the to stack.
+  (let [fr (dec fr')
+        to (dec to')
+        ;; _ (println "fr to" fr to)
+        ;; What are we moving?
+        moving (peek (nth stacks fr))
+        _ (println "Moving: " moving " from: " fr " to: " to)
+        ;; Remove that item
+        stacks' (update stacks fr pop)]
+    ;; And push the removed item to the new stack
+    (update stacks' to #(conj % moving))))
+
+(def d5-final-stacks
+  "Make all the moves on the starting stacks"
+  (reduce make-move d5-starting-stacks d5-moves))
+
+(def d5-q1
+  "Return the character on the top of each stack as a string"
+  (apply str (map peek d5-final-stacks)))
