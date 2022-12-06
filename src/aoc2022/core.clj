@@ -389,7 +389,7 @@
 
 (def d5-input-raw
   "Day 5 input split into raw lines"
-  (clojure.string/split-lines (slurp "resources/day5-test1.txt")))
+  (clojure.string/split-lines (slurp "resources/day5-input.txt" #_"resources/day5-test1.txt")))
 
 ;; We have to split the input into two pieces:
 ;; 1. Starting crate configuration lines
@@ -489,3 +489,4 @@
 (def d5-q1
   "Return the character on the top of each stack as a string"
   (apply str (map peek d5-final-stacks)))
+;; VPCDMSLWJ (correct)
