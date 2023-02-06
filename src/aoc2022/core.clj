@@ -1,7 +1,9 @@
 (ns aoc2022.core
   "Douglas P. Fields, Jr.'s Advent of Code 2022 solutions in Clojure.
    Copyright 2022 Douglas P. Fields, Jr. All Rights Reserved.
-   symbolics@lisp.engineer")
+   symbolics@lisp.engineer"
+  (:require [clojure.set :as set]
+            [clojure.string :as str]))
 
 ;; IntelliJ hotkeys on Windows with Cursive:
 ;; Alt-Shift-P - Send form to REPL
@@ -12,7 +14,7 @@
 
 (def day1-input
   "Day 1 input file parsed into lines"
-  (clojure.string/split-lines (slurp "resources/day1-input.txt")))
+  (str/split-lines (slurp "resources/day1-input.txt")))
 
 (def d1-elves
   "Turns the day1-input into sums for each elf."
@@ -20,7 +22,7 @@
             "If val is non-blank, treat it as a string'd long and add it to the last
              item in the acc vector. If it is blank, we're done with the previous value
              so we should start a new one (at 0)."
-            (if (clojure.string/blank? val)
+            (if (str/blank? val)
               ;; Done with the current elf, add a new elf
               (conj acc 0)
               ;; Add the current number to the last one
@@ -40,7 +42,7 @@
 
 (def d2-input-raw
   "Raw text file input split into lines"
-  (clojure.string/split-lines (slurp "resources/day2-input.txt")))
+  (str/split-lines (slurp "resources/day2-input.txt")))
 
 ;; Let's parse this from "1 2" strings to [:rock :paper] vectors
 (defn parse-d2-input-q1
@@ -158,7 +160,7 @@
 
 (def d3-input-raw
   "Day 3 input split into raw lines"
-  (clojure.string/split-lines (slurp "resources/day3-input.txt")))
+  (str/split-lines (slurp "resources/day3-input.txt")))
 
 (def d3-input
   "The day 3 input split into a seq of rucksacks,
@@ -182,7 +184,7 @@
   [s1 s2]
   (let [set1 (set s1)
         set2 (set s2)]
-    (first (clojure.set/intersection set1 set2))))
+    (first (set/intersection set1 set2))))
 
 (defn item-priority
   "Lowercase item types a through z have priorities 1 through 26.
@@ -204,7 +206,7 @@
 ;; Group input into 3
 ;; combine each of the 3 rucksack into a single set
 ;; see what is the same in all 3
-;; i.e.: (apply clojure.set/intersection (map (comp set flatten) (take 3 d3-input)))
+;; i.e.: (apply set/intersection (map (comp set flatten) (take 3 d3-input)))
 ;; for a single example
 
 (def d3-group
@@ -239,7 +241,7 @@
 
 (def d3-badges
   "The badge is the unique item in each group of 3 elves's rucksacks."
-  (map #(first (apply clojure.set/intersection %)) d3-group-sets))
+  (map #(first (apply set/intersection %)) d3-group-sets))
 
 ;; Note: Up to here there has been no error checking of these cases:
 ;; 1. Any last group of less than 3 elves: (some #(not= 3 %) (map count d3-groups)) is nil, so good
@@ -264,13 +266,13 @@
 
 (def d4-input-raw
   "Day 4 input split into raw lines"
-  (clojure.string/split-lines (slurp "resources/day4-input.txt")))
+  (str/split-lines (slurp "resources/day4-input.txt")))
 
 (defn split-last
-  "Like clojure.string/split but takes the input string to
+  "Like str/split but takes the input string to
    split as the last arg."
   [pattern limit string]
-  (clojure.string/split string pattern limit))
+  (str/split string pattern limit))
 
 (def d4-input
   "Day 4 input parsed into
@@ -382,3 +384,110 @@
     ;; Now let's count the trues
     (count (filter identity fci))))
 ;; 938
+
+;; Day 5 -----------------------------------------------------------
+
+;; (This was done upstate and obviously not checked in yet.)
+
+;; Day 6 ------------------------------------------------------------
+;; https://adventofcode.com/2022/day/6
+
+(def d6-input-raw
+  "Day 6 input as a single long raw line"
+  (str/trim (slurp "resources/day6-input.txt")))
+
+;; Detect start-of-packet marker: four characters that are all different
+
+;; Problem 1:
+;; Identify the first position where the four most recently received
+;; characers are all different. Report # of chars from beginning of
+;; buffer to the end of the first such four-character marker.
+;;
+;; mjqjpqmgbljsphdztnvjfqwrcgsmlb -> 7
+
+(defn char-of-first-4-uniq
+  "Return the 1-based character position where the previous 4
+   characters were all unique for the first time. If it never
+   happens, returns nil."
+  [s]
+  (letfn [(dropv [n v]
+            "Drops n items from the front of vector v"
+            (vec (drop n v)))
+          (limit [n vs]
+            "Limits the vector vs to at most n entries"
+            (if (> (count vs) n)
+              (vec (drop (- (count vs) n) vs))
+              vs))
+          (f [[char-num vals] val]
+            "Reducing function that implements the main body.
+             Returns the index of the character whose previous 4 are
+             first unique.
+             Call with [0 []] as the initial accumulator.
+             Acc(umulator) = [char-num [a b c d]]
+             val(ue) = next character to add
+             return: number char-num when b c d val are all different
+             or a list, which indicates there is at least one dup in bcdval"
+            (let [new-vals (conj (limit 3 vals) val)
+                  nv-set (set new-vals)]
+              #_(print (count nv-set) nv-set "\n") ;; Watch what's going on
+              (if (= (count nv-set) 4)
+                (reduced char-num)
+                [(inc char-num) new-vals])))]
+    (let [result (reduce f [0 []] s)]
+      (if (number? result)
+        (inc result)
+        nil))))
+
+;; Tests
+(char-of-first-4-uniq "abcdefghij")
+(char-of-first-4-uniq "abcccc")
+
+;; Problem examples
+(char-of-first-4-uniq "mjqjpqmgbljsphdztnvjfqwrcgsmlb") ; 7 - first example
+(char-of-first-4-uniq "bvwbjplbgvbhsrlpgdmjqwftvncz") ; : first marker after character 5
+(char-of-first-4-uniq "nppdvjthqldpwncqszvftbrmjlhg") ; : first marker after character 6
+(char-of-first-4-uniq "nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg") ; : first marker after character 10
+(char-of-first-4-uniq "zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw") ; : first marker after character 11
+
+(char-of-first-4-uniq d6-input-raw)
+;; 1100 of 4095
+
+(defn char-of-first-N-uniq
+  "Return the 1-based character position where the previous N
+   characters were all unique for the first time. If it never
+   happens, returns nil."
+  [N s]
+  (letfn [(dropv [n v]
+            "Drops n items from the front of vector v"
+            (vec (drop n v)))
+          (limit [n vs]
+            "Limits the vector vs to at most n entries"
+            (if (> (count vs) n)
+              (vec (drop (- (count vs) n) vs))
+              vs))
+          (f [[char-num vals] val]
+            "Reducing function that implements the main body.
+             Returns the index of the character whose previous 4 are
+             first unique.
+             Call with [0 []] as the initial accumulator.
+             Acc(umulator) = [char-num [a b c d]]
+             val(ue) = next character to add
+             return: number char-num when b c d val are all different
+             or a list, which indicates there is at least one dup in bcdval"
+            (let [new-vals (conj (limit (dec N) vals) val)
+                  nv-set (set new-vals)]
+              #_(print (count nv-set) nv-set "\n") ;; Watch what's going on
+              (if (= (count nv-set) N)
+                (reduced char-num)
+                [(inc char-num) new-vals])))]
+    (let [result (reduce f [0 []] s)]
+      (if (number? result)
+        (inc result)
+        nil))))
+
+
+(char-of-first-N-uniq 14 "mjqjpqmgbljsphdztnvjfqwrcgsmlb");: first marker after character 19
+(char-of-first-N-uniq 14 "bvwbjplbgvbhsrlpgdmjqwftvncz");: first marker after character 23
+(char-of-first-N-uniq 14 "nppdvjthqldpwncqszvftbrmjlhg");: first marker after character 23
+(char-of-first-N-uniq 14 "nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg");: first marker after character 29
+(char-of-first-N-uniq 14 "zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw");: first marker after character 26
