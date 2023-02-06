@@ -405,53 +405,8 @@
 ;;
 ;; mjqjpqmgbljsphdztnvjfqwrcgsmlb -> 7
 
-(defn char-of-first-4-uniq
-  "Return the 1-based character position where the previous 4
-   characters were all unique for the first time. If it never
-   happens, returns nil."
-  [s]
-  (letfn [(dropv [n v]
-            "Drops n items from the front of vector v"
-            (vec (drop n v)))
-          (limit [n vs]
-            "Limits the vector vs to at most n entries"
-            (if (> (count vs) n)
-              (vec (drop (- (count vs) n) vs))
-              vs))
-          (f [[char-num vals] val]
-            "Reducing function that implements the main body.
-             Returns the index of the character whose previous 4 are
-             first unique.
-             Call with [0 []] as the initial accumulator.
-             Acc(umulator) = [char-num [a b c d]]
-             val(ue) = next character to add
-             return: number char-num when b c d val are all different
-             or a list, which indicates there is at least one dup in bcdval"
-            (let [new-vals (conj (limit 3 vals) val)
-                  nv-set (set new-vals)]
-              #_(print (count nv-set) nv-set "\n") ;; Watch what's going on
-              (if (= (count nv-set) 4)
-                (reduced char-num)
-                [(inc char-num) new-vals])))]
-    (let [result (reduce f [0 []] s)]
-      (if (number? result)
-        (inc result)
-        nil))))
 
-;; Tests
-(char-of-first-4-uniq "abcdefghij")
-(char-of-first-4-uniq "abcccc")
-
-;; Problem examples
-(char-of-first-4-uniq "mjqjpqmgbljsphdztnvjfqwrcgsmlb") ; 7 - first example
-(char-of-first-4-uniq "bvwbjplbgvbhsrlpgdmjqwftvncz") ; : first marker after character 5
-(char-of-first-4-uniq "nppdvjthqldpwncqszvftbrmjlhg") ; : first marker after character 6
-(char-of-first-4-uniq "nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg") ; : first marker after character 10
-(char-of-first-4-uniq "zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw") ; : first marker after character 11
-
-(char-of-first-4-uniq d6-input-raw)
-;; 1100 of 4095
-
+;; This was refactored after part 2
 (defn char-of-first-N-uniq
   "Return the 1-based character position where the previous N
    characters were all unique for the first time. If it never
@@ -485,9 +440,36 @@
         (inc result)
         nil))))
 
+(defn char-of-first-4-uniq
+  "Return the 1-based character position where the previous 4
+   characters were all unique for the first time. If it never
+   happens, returns nil."
+  [s]
+  (char-of-first-N-uniq 4 s))
+
+;; Tests
+(char-of-first-4-uniq "abcdefghij")
+(char-of-first-4-uniq "abcccc")
+
+;; Problem examples
+(char-of-first-4-uniq "mjqjpqmgbljsphdztnvjfqwrcgsmlb") ; 7 - first example
+(char-of-first-4-uniq "bvwbjplbgvbhsrlpgdmjqwftvncz") ; : first marker after character 5
+(char-of-first-4-uniq "nppdvjthqldpwncqszvftbrmjlhg") ; : first marker after character 6
+(char-of-first-4-uniq "nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg") ; : first marker after character 10
+(char-of-first-4-uniq "zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw") ; : first marker after character 11
+
+;; Part 1 answer:
+(char-of-first-4-uniq d6-input-raw)
+;; 1100 of 4095
+
+;; Day 6 Part 2 ----------
 
 (char-of-first-N-uniq 14 "mjqjpqmgbljsphdztnvjfqwrcgsmlb");: first marker after character 19
 (char-of-first-N-uniq 14 "bvwbjplbgvbhsrlpgdmjqwftvncz");: first marker after character 23
 (char-of-first-N-uniq 14 "nppdvjthqldpwncqszvftbrmjlhg");: first marker after character 23
 (char-of-first-N-uniq 14 "nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg");: first marker after character 29
 (char-of-first-N-uniq 14 "zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw");: first marker after character 26
+
+;; Part 2 answer:
+(char-of-first-N-uniq 14 d6-input-raw)
+;; 2421
