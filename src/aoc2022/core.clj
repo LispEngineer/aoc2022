@@ -490,3 +490,6 @@
   "Return the character on the top of each stack as a string"
   (apply str (map peek d5-final-stacks)))
 ;; VPCDMSLWJ (correct)
+
+;; Day 5 Question 2 ------------------
+;; (will do it another day)
