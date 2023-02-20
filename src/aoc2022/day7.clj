@@ -1,6 +1,6 @@
 (ns aoc2022.day7
   "Douglas P. Fields, Jr.'s Advent of Code 2022 solutions in Clojure.
-   Copyright 2022 Douglas P. Fields, Jr. All Rights Reserved.
+   Copyright 2023 Douglas P. Fields, Jr. All Rights Reserved.
    symbolics@lisp.engineer"
   (:require [clojure.set :as set]
             [clojure.string :as str]))
@@ -224,3 +224,66 @@ $ ls
 
 ;; Test
 (= (build-dir d7p1-test) desired-output)
+
+;; -----------------------------------------------------------------------
+;; At this point we can build the tree structure of the directories per the
+;; information provided, subject to these conditions:
+;; 1. It never CDs up past root
+;; 2. It never CDs into a previously unseen directory
+;; 3. It always lists the contents of a directory before going into
+;;    a deeper directory in there.
+;; FIXME: I should really build checks in for those things into the code above.
+
+;; Now we have to walk the tree and build the total size of each directory.
+;; Directories have their sizes initialized to -1, which is reasonable.
+;; What we will do is walk the tree with one copy of the data structure,
+;; and update the sizes (in a second copy) since the tree structure will
+;; stay the same while we update the size keys.
+;; We will need to do a depth-first traversal because we need to calculate
+;; the deeper parts before we can add them into the higher parts.
+;; This is not a very idiomatic Clojure way of doing it either, sorry.
+
+(defn calc-sizes
+  "TODO"
+  ([dir]
+   ;; Start off the recursive version and return the fully updated tree
+   (let [atom-dir (atom dir)]
+     (calc-sizes dir [] atom-dir)
+     @atom-dir))
+  ;; -----
+  ([subdir path whole-dir]
+   ;; We have three things:
+   ;; subdir - the segment of the dir tree we're currently looking at
+   ;; path - the path from whole-dir to here (via :entries keys)
+   ;; whole-dir - an atom containing the whole tree that we can modify
+   #_(println "Path:" path)
+   (when (not= :dir (:type subdir))
+     (throw (ex-info (str "Internal error, cd into file: " subdir) {:subdir subdir :path path})))
+   (doseq [file (vals (:entries subdir))]
+     (when (= :dir (:type file))
+       ;; Calculate the size of this subdirectory
+       #_(println "Calculating size of subdir:" (:name file))
+       ;; We cannot `recur`, that is only for tail recursion.
+       (calc-sizes file (conj path (:name file)) whole-dir)))
+   ;; Now that all the subdirectories have been added,
+   ;; add the sizes of all the files/dirs within
+   ;; and set that to the size of us.
+   #_(println "Now calculating for path:" path)
+   (let [children (get-in @whole-dir (concat (make-dir-path path) '(:entries)))
+         child-sizes (map (comp :size second) children)
+         total-size (reduce + child-sizes)]
+     (swap! whole-dir assoc-in ,,, (concat (make-dir-path path) '(:size)) total-size)
+     #_(println "Size of" path "is" total-size))
+   ;; ...and we're done
+   @whole-dir ;; Unnecessary return value
+   ))
+
+;; mapping on a map returns pairs [key val]
+(map (comp :size second) (:entries desired-output)) ;; (-1 14... 85... -1)
+
+;; Test
+(calc-sizes desired-output)
+;; Size of [a e] is 584
+;; Size of [a] is 94853
+;; Size of [d] is 24933642
+;; Size of [] is 48381165
