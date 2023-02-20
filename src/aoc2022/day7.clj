@@ -6,7 +6,6 @@
             [clojure.string :as str]))
 
 
-;; Day 7 ---------------------------------------------------------
 
 ;; Parse commands to create a tree representation of a directory
 ;; containing files with sizes.
@@ -44,18 +43,22 @@ $ ls
 5626152 d.ext
 7214296 k"))
 
+(def ^:const cmd-prompt
+  "The command prompt"
+  "$ ")
 
 (defn get-next-command
   "Returns: [remaining-commands [command args]]
    command is :dir or :ls
-   where args is a string for dir and a map of filenames to sizes or :dir"
+   where args is a string for dir and a map of filenames to sizes or :dir.
+   remaining-commands may be a seq not a vec."
   [commands]
   (let [cmd-line (first commands)
         commands (vec (rest commands))
         split-cmd (str/split cmd-line, #" ")
         cmd (nth split-cmd 1 nil)]
     ;; Detect errors - we are expecting a command
-    (when (not (str/starts-with? cmd-line "$ "))
+    (when (not (str/starts-with? cmd-line cmd-prompt))
       (throw (ex-info (str "Invalid command line ($): " cmd-line) {:cmd-line cmd-line})))
     (when (< (count split-cmd) 2)
       (throw (ex-info (str "Invalid command line (length): " cmd-line) {:cmd-line cmd-line})))
@@ -69,37 +72,34 @@ $ ls
       ;; Return the result for LS
       (if (not= cmd "ls")
         (throw (ex-info (str "Invalid command line (unknown): " cmd-line) {:cmd-line cmd-line}))
-        ;; For LS, we need to slurp commands until the next command
-        ;; FIXME: CODE ME
-        ))))
+        ;; For LS, we need to slurp commands until the next command, which starts with a $
+        (let [dir-entries (take-while #(not (str/starts-with? % cmd-prompt)) commands)
+              commands (drop (count dir-entries) commands)]
+          ;; FIXME: Now we need to parse the dir-entries
+          [commands [:ls dir-entries]])))))
 
-
-(defn parse-commands'
-  "TODO"
-  [commands so-far]
-  (println "Commands:" commands)
-  (println "So far:" so-far)
-  (if (empty? commands)
-    ;; Final case
-    so-far
-    ;; Recurring case
-    (let [[remaining next-command] (get-next-command commands)]
-      (println "Remaining: " remaining)
-      (println "Next cmd: " next-command)
-      (recur remaining (conj so-far next-command)))))
 
 ;; Massage the input into more useful form one modification at a time
 (defn parse-commands
   "Takes a list of lines and turns it into a vector of commands:
    [command args]
    command = cd, args = string dir - one of / .. or <dirname>
-   command = ls, args = map of filenames to sizes OR :dir"
-  ;; Unary: Starts the recursive function
+   command = ls, args = map of filenames to sizes OR :dir
+   --
+   Only call this with the single arg, a seq of terminal output commands.
+   The 2-arg version is for internal use only."
   ([commands]
-   (parse-commands [commands []]))
-  ([[commands so-far]]
-
-  )
+   ;; TODO: Use a volatile vector to the internal and finalize it here instead,
+   ;; for performance reasons (if desired)
+   (parse-commands commands []))
+  ([commands acc]
+   ;; Get the next command, and add it to the end of the accumulator,
+   ;; then do it again until we are out of commands, and return the
+   ;; accumulator.
+   (if (empty? commands)
+     acc
+     (let [[commands command] (get-next-command commands)]
+       (recur commands (conj acc command))))))
 
 (defn add-cwds
   "Takes a list of commands and adds the current directory to each one, as of
