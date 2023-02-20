@@ -244,7 +244,10 @@ $ ls
 ;; This is not a very idiomatic Clojure way of doing it either, sorry.
 
 (defn calc-sizes
-  "TODO"
+  "Calculate the sizes of all `:type :dir` entries.
+   We do it by first calculating the sizes recursively of all the
+   subdirectories, then adding those sizes up with all the files,
+   to calculate the current directory."
   ([dir]
    ;; Start off the recursive version and return the fully updated tree
    (let [atom-dir (atom dir)]
