@@ -10,6 +10,7 @@
 ;; IntelliJ hotkeys on Windows with Cursive:
 ;; Alt-Shift-P - Send form to REPL
 ;; Control-\ - Jump to REPL input
+;;   ESC - Jump back to Editor from REPL
 ;; Alt-Shift-M - "Sync files in REPL"
 ;; Alt-Shift-L - Load file to repl
 ;; Alt-Shift-R - Switch REPL to current file's namespace
