@@ -165,3 +165,111 @@
 (full-visibility day8-parsed)
 ;; => 1803 (correct)
 
+;; ------------------------------------------------------
+;; Part 2
+;; https://adventofcode.com/2022/day/8#part2
+;;
+;; We need to project from any square in all four directions,
+;; that is, given a coordinate [x y] we need to know the numbers
+;; from that coordinate out to the edges in each of the four directions.
+;;
+;; The big question I have is, if you see like this:
+;; 5 4 1 5
+;; And you're at the leftmost 5, can you really see the 1?
+;; What about
+;; 5 4 1 4 1 4 1 4 1 5
+;; can you really see all those 1s and 4s?
+;;
+;; The instructions say
+;; "stop if you reach an edge
+;;  OR at the first tree that is
+;;   the same height or taller than the tree under consideration"
+;;
+;; So it seems that it really allows the 541414141 situation.
+
+
+(defn projection-value
+  "Given a projection - a seq starting with the \"home\" tree,
+   how many trees can we see from here? Any tree at the home
+   height or higher blocks any further trees."
+  [ray]
+  (if (< (count ray) 2)
+    ;; There are no trees beyond us in this direction, we must
+    ;; be on the edge, so we see zero tree.
+    0
+    ;; ... Count as far as we can see
+    (let [home (first ray)]
+      (reduce (fn [cnt t]
+                (if (>= t home)
+                  ;; We can't see beyond this tree; we saw this tree and all
+                  ;; the previous trees.
+                  (reduced (inc cnt))
+                  ;; We saw this tree, and any future trees to come.
+                  (inc cnt)))
+            0 (rest ray)))))
+
+;; Tests
+(projection-value [])
+(projection-value [5])
+(projection-value [5 4])
+(projection-value [5 5])
+(projection-value [5 6])
+(projection-value [5 5 5])
+(projection-value [5 4 5])
+(projection-value [5 4 4])
+(projection-value [5 4 4 7 3 3 3 3])
+
+(defn senic-score
+  "We need to project from any square in all four directions,
+   that is, given a coordinate [x y] we need to know the numbers
+   from that coordinate out to the edges in each of the four directions.
+   --
+   m = input matrix - a square nested set of vectors
+   [x y] = coordinate; x = column, y = row
+     with 0 = leftmost column; 0 = topmost row
+   --
+   We then map the `projection-value` of each of those four projections,
+   and multiply them all together to return the `senic score`.
+   --
+   If x or y are OOB this will throw an IOOBE.
+   "
+  [m [x y]]
+  (let [row (nth m y) ;; Get the row y
+        col (map #(nth % x) m) ;; Get the column x
+        ;; _ (println "coord:" [x y] "\nrow:" row "\ncol:" col)
+        ;; Now, project forward and backward along the row,
+        ;; always keeping the original number in the head position.
+        fwd  (drop x row)
+        rev  (reverse (take (inc x) row))
+        down (drop y col)
+        up   (reverse (take (inc y) col))
+        ;; _ (println "fwd:" fwd "\nrev:" rev "\ndown:" down "\nup:" up)
+        ]
+    (apply * (map projection-value [fwd rev down up]))))
+
+;; Tests
+(senic-score d8p1-test-parsed [2 1]) ;; => 4
+(senic-score d8p1-test-parsed [2 3]) ;; => 8
+
+(defn highest-senic-score
+  "Find the senic score for every tree, and return the maximum."
+  [m]
+  (let [n-rows (count m)
+        n-cols (count (first m))
+        scores (for [y (range n-rows) ;; This will increment less quickly than
+                     x (range n-cols)] ;; this coordinate will
+                 (senic-score m [x y]))]
+    #_(println (partition n-cols scores))
+    ;; These two are semantically equivalent
+    #_(reduce max scores)
+    (apply max scores)))
+
+
+;; Test
+(highest-senic-score d8p1-test-parsed)
+;; => 8 (correct)
+
+;; And get our answer
+(highest-senic-score day8-parsed)
+;; => 268912 (correct)
+
