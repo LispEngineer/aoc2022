@@ -287,3 +287,91 @@ $ ls
 ;; Size of [a] is 94853
 ;; Size of [d] is 24933642
 ;; Size of [] is 48381165
+
+;; Find all directories less than a certain size and return them
+(defn find-matching
+  "Returns a list of all entries in the tree matching the specified
+   predicate.
+   --
+   Do a pre-order traversal and anything that matches, add to the list.
+   "
+  [dir pred]
+  #_(println "in:" (:name dir))
+  (let [this-dir (if (pred dir) (list dir) '())
+        ;; _ (println "new this-dir:" this-dir)
+        subdirs (mapcat #(find-matching % pred) (vals (:entries dir)))]
+    #_(println "in:" (:name dir) "new subdirs:" (pr-str subdirs))
+    (concat this-dir subdirs)))
+
+;; Test
+(map :name (find-matching (calc-sizes (build-dir d7p1-test)) #(and (<= (:size %) 100000) (= (:type %) :dir))))
+;; => ("a" "e")
+
+
+;; And answer the question!
+(def test-answer-p1
+  "The answer on the test input"
+  (reduce +
+    (map :size
+      (find-matching
+        (calc-sizes (build-dir d7p1-test))
+        ;; Find all directories with at most 100,000 bytes
+        #(and (<= (:size %) 100000) (= (:type %) :dir)))))
+  ;;=> 95437
+  )
+
+(def day7-dirs
+  "The directory structure from the input, with sizes calculated."
+  (calc-sizes (build-dir day7-input)))
+
+(def real-answer-p1
+  "The answer on the real input"
+  (reduce +
+    (map :size
+      (find-matching day7-dirs
+        #(and (<= (:size %) 100000) (= (:type %) :dir)))))
+  ;; => 1989474
+  )
+
+;; ------------------------------------------------------
+;; Part 2
+;; Filesystem has 70,000,000 space.
+;; The used space is 41,072,511 (:size day7-dirs).
+;; The needed space is 30,000,000.
+;; The remaining space is 70,000,000 - 41,072-511 = 28,927,489
+;; Essentially, find the smallest single directory to delete which would
+;; bring free space up to at least 30,000,000.
+;; ...which is 30,000,000 - 28,927,489 = 1,072,511
+
+(def used-space (:size day7-dirs))
+(def total-space 70000000) ; 70M
+(def needed-space 30000000) ; 30M
+
+(def remaining-space (- total-space used-space))
+
+(def need-to-free (- needed-space remaining-space))
+
+(def real-answer-p2
+  ;; Find all the matching entries (at least big enough to allow continuation)
+  ;; then sort them lowest size first
+  ;; then take the first one
+  (first
+    (sort
+      (map :size
+        (find-matching day7-dirs
+          #(and (= (:type %) :dir) (>= (:size %) need-to-free)))))))
+;; => 1111607
+
+;; Before submitting that, though, let's run it on the test
+(def test-answer-p2
+  ;; Find all the matching entries (at least big enough to allow continuation)
+  ;; then sort them lowest size first
+  ;; then take the first one
+  (let [test-dirs (calc-sizes (build-dir d7p1-test))]
+    (first
+      (sort
+        (map :size
+           (find-matching test-dirs
+              #(and (= (:type %) :dir)
+                    (>= (:size %)
+                        (- needed-space (- total-space (:size test-dirs)))))))))))
