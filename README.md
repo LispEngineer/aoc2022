@@ -2,7 +2,8 @@
 
 Advent of Code 2022 in Clojure by Douglas P. Fields, Jr.
 
-* [Day 6](https://adventofcode.com/2022/day/6)
+* Days 1-6 in `core.clj`
+* Days 7+ in `day#.clj` for the appropriate `#`
 
 ## License
 
